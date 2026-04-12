@@ -85,6 +85,7 @@ model Task {
   description String?  @db.Text
   status      String   @default("To Do") // To Do, In Progress, Done
   priority    String   @default("Medium") // Low, Medium, High, Critical
+  difficulty  Int      @default(1) // 1-5 Difficulty Rating
   dueDate     DateTime?
   projectId   String
   createdAt   DateTime @default(now())

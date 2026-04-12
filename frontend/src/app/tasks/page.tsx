@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Search, CheckSquare, Loader2, X, AlertCircle } from "lucide-react";
+import { Plus, Search, CheckSquare, Loader2, X, AlertCircle, User as UserIcon } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 
 export default function TasksPage() {
@@ -11,6 +11,7 @@ export default function TasksPage() {
   
   // Data State
   const [projects, setProjects] = useState<any[]>([]);
+  const [workspaceMembers, setWorkspaceMembers] = useState<any[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>("");
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -20,7 +21,9 @@ export default function TasksPage() {
   const [newTaskName, setNewTaskName] = useState("");
   const [newTaskDesc, setNewTaskDesc] = useState("");
   const [newTaskPriority, setNewTaskPriority] = useState("Medium");
+  const [newTaskDifficulty, setNewTaskDifficulty] = useState("1");
   const [newTaskDate, setNewTaskDate] = useState("");
+  const [newTaskAssignee, setNewTaskAssignee] = useState("auto");
 
   useEffect(() => {
     loadProjects();
@@ -52,6 +55,8 @@ export default function TasksPage() {
               setSelectedProjectId(data[0].id);
             }
           }
+          const mRes = await fetch(`http://localhost:5000/api/workspaces/${activeWs.workspaceId}/members`);
+          if (mRes.ok) setWorkspaceMembers(await mRes.json());
         } catch (error) {
           console.error("Failed to load generic projects data.");
         }
@@ -82,6 +87,8 @@ export default function TasksPage() {
           name: newTaskName,
           description: newTaskDesc,
           priority: newTaskPriority,
+          difficulty: newTaskDifficulty,
+          assigneeId: newTaskAssignee,
           dueDate: newTaskDate || null,
           userRole: workspace.role
         })
@@ -92,7 +99,9 @@ export default function TasksPage() {
         setNewTaskName("");
         setNewTaskDesc("");
         setNewTaskPriority("Medium");
+        setNewTaskDifficulty("1");
         setNewTaskDate("");
+        setNewTaskAssignee("auto");
         loadTasks(selectedProjectId);
       }
     } catch (error) {
@@ -186,6 +195,8 @@ export default function TasksPage() {
                     <th className="pb-3 pl-2 pr-4 font-medium"><CheckSquare className="h-4 w-4" /></th>
                     <th className="pb-3 pr-4 font-medium">Task Name</th>
                     <th className="pb-3 pr-4 font-medium">Priority</th>
+                    <th className="pb-3 pr-4 font-medium">Difficulty</th>
+                    <th className="pb-3 pr-4 font-medium">Assignee</th>
                     <th className="pb-3 pr-4 font-medium">Due Date</th>
                     <th className="pb-3 pr-4 font-medium">Status</th>
                   </tr>
@@ -220,6 +231,25 @@ export default function TasksPage() {
                           }`}>
                             {task.priority}
                           </span>
+                        </td>
+                        <td className="py-4 pr-4">
+                           <div className="flex space-x-1" title={`Level ${task.difficulty || 1}`}>
+                              {[1,2,3,4,5].map(level => (
+                                 <div key={level} className={`h-1.5 w-2.5 rounded-sm ${level <= (task.difficulty || 1) ? 'bg-orange-500' : 'bg-slate-200 dark:bg-slate-700'}`}></div>
+                              ))}
+                           </div>
+                        </td>
+                        <td className="py-4 pr-4">
+                           {task.assignees && task.assignees.length > 0 ? (
+                              <div className="flex items-center space-x-2">
+                                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-[10px] font-bold text-blue-700 dark:bg-blue-900/50 dark:text-blue-300">
+                                    {task.assignees[0].user.name?.charAt(0).toUpperCase() || task.assignees[0].user.email?.charAt(0).toUpperCase() || "U"}
+                                 </div>
+                                 <span className="text-xs font-medium text-slate-700 dark:text-slate-300 max-w-[100px] truncate">{task.assignees[0].user.name || task.assignees[0].user.email}</span>
+                              </div>
+                           ) : (
+                              <span className="text-xs font-medium text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md">Unassigned</span>
+                           )}
                         </td>
                         <td className="py-4 pr-4 text-slate-500 text-xs">
                           {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "No Date"}
@@ -290,6 +320,29 @@ export default function TasksPage() {
                   <div className="flex-1">
                     <label className="mb-1.5 block text-sm font-medium">Due Date</label>
                     <input type="date" value={newTaskDate} onChange={(e) => setNewTaskDate(e.target.value)} className="w-full rounded-xl border border-slate-300 bg-transparent px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700 [color-scheme:light] dark:[color-scheme:dark]" />
+                  </div>
+                </div>
+
+                <div className="flex space-x-4">
+                  <div className="flex-1">
+                    <label className="mb-1.5 block text-sm font-medium">Difficulty</label>
+                    <select value={newTaskDifficulty} onChange={(e) => setNewTaskDifficulty(e.target.value)} className="w-full rounded-xl border border-slate-300 bg-transparent px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700">
+                       <option value="1" className="dark:bg-slate-800">1 - Trivial</option>
+                       <option value="2" className="dark:bg-slate-800">2 - Easy</option>
+                       <option value="3" className="dark:bg-slate-800">3 - Moderate</option>
+                       <option value="4" className="dark:bg-slate-800">4 - Hard</option>
+                       <option value="5" className="dark:bg-slate-800">5 - Extreme</option>
+                    </select>
+                  </div>
+                  <div className="flex-1">
+                    <label className="mb-1.5 block text-sm font-medium">Assignee</label>
+                    <select value={newTaskAssignee} onChange={(e) => setNewTaskAssignee(e.target.value)} className="w-full rounded-xl border border-slate-300 bg-transparent px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700">
+                       <option value="auto" className="dark:bg-slate-800 font-bold text-blue-600">🌟 Auto Load-Balance</option>
+                       <option value="" className="dark:bg-slate-800">Unassigned</option>
+                       {workspaceMembers.map(m => (
+                          <option key={m.userId} value={m.userId} className="dark:bg-slate-800">{m.user.name || m.user.email}</option>
+                       ))}
+                    </select>
                   </div>
                 </div>
 
