@@ -30,7 +30,7 @@ export default function NotesIndex() {
           const ws = parsed.workspaces[0];
           setWorkspace(ws);
           try {
-            const pRes = await fetch(`http://localhost:5000/api/projects/${ws.workspaceId}?userId=${parsed.id}&userRole=${ws.role}`);
+            const pRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/projects/${ws.workspaceId}?userId=${parsed.id}&userRole=${ws.role}`);
             if (pRes.ok) {
                const pData = await pRes.json();
                setProjects(pData);
@@ -50,7 +50,7 @@ export default function NotesIndex() {
 
   const fetchNotes = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/api/notes/project/${selectedProjectId}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/notes/project/${selectedProjectId}`);
       if (res.ok) setNotes(await res.json());
     } catch(e) {}
   };
@@ -59,7 +59,7 @@ export default function NotesIndex() {
     e.preventDefault();
     if (!newTitle || !selectedProjectId || !user) return;
     try {
-      const res = await fetch("http://localhost:5000/api/notes", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/notes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

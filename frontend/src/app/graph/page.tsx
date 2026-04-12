@@ -16,7 +16,7 @@ export default function RelationshipGraph() {
     if (storedUser) {
       const parsed = JSON.parse(storedUser);
       if (parsed.workspaces?.length > 0) {
-         fetch(`http://localhost:5000/api/workspaces/${parsed.workspaces[0].workspaceId}/graph`)
+         fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/workspaces/${parsed.workspaces[0].workspaceId}/graph`)
            .then(res => res.json())
            .then(data => {
               setNodes(data.nodes);

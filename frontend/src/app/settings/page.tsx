@@ -34,7 +34,7 @@ export default function SettingsPage() {
     if (!workspace) return;
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/workspaces/${workspace.workspaceId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/workspaces/${workspace.workspaceId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name })
@@ -64,7 +64,7 @@ export default function SettingsPage() {
     }
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/auth/password", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/password`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userId: user.id, currentPassword, newPassword })

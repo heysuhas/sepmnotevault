@@ -19,7 +19,7 @@ export default function CalendarPage() {
         if (parsed.workspaces?.length > 0) {
            try {
               const ws = parsed.workspaces[0];
-              const mRes = await fetch(`http://localhost:5000/api/milestones/workspace/${ws.workspaceId}`);
+              const mRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/milestones/workspace/${ws.workspaceId}`);
               
               if (mRes.ok) {
                  const milestones = await mRes.json();

@@ -38,11 +38,11 @@ export default function CollaborativeEditor() {
          setWorkspace(parsedUser.workspaces[0]);
          const ws = parsedUser.workspaces[0];
          // Pre-fetch notes for linking dropdown
-         fetch(`http://localhost:5000/api/projects/${ws.workspaceId}?userId=${parsedUser.id}&userRole=${ws.role}`)
+         fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/projects/${ws.workspaceId}?userId=${parsedUser.id}&userRole=${ws.role}`)
            .then(res => res.json())
            .then(async (projects) => {
               if (projects.length > 0) {
-                 const res = await fetch(`http://localhost:5000/api/notes/project/${projects[0].id}`);
+                 const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/notes/project/${projects[0].id}`);
                  if (res.ok) setWorkspaceNotes(await res.json());
               }
            });
@@ -50,7 +50,7 @@ export default function CollaborativeEditor() {
     }
     
     // Fetch initial Note Data
-    fetch(`http://localhost:5000/api/notes/${noteId}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/notes/${noteId}`)
       .then(res => res.json())
       .then(data => {
         setNote(data);
@@ -63,7 +63,7 @@ export default function CollaborativeEditor() {
   }, [noteId]);
 
   useEffect(() => {
-    const s = io("http://localhost:5000");
+    const s = io(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}`);
     setSocket(s);
     s.emit("join-note", noteId);
     s.on("receive-note-change", (data) => {
@@ -86,7 +86,7 @@ export default function CollaborativeEditor() {
   const handleManualSave = async () => {
     setIsSaving(true);
     try {
-      await fetch(`http://localhost:5000/api/notes/${noteId}`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/notes/${noteId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content, tags })
@@ -98,7 +98,7 @@ export default function CollaborativeEditor() {
   const handleUpdateStatus = async (newStatus: string) => {
     if (!user) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/notes/${noteId}/status`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/notes/${noteId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -114,7 +114,7 @@ export default function CollaborativeEditor() {
     e.preventDefault();
     if (!newTaskName || !note) return;
     try {
-      const res = await fetch("http://localhost:5000/api/tasks", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/tasks`, {
         method: "POST",
         headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
@@ -137,7 +137,7 @@ export default function CollaborativeEditor() {
     e.preventDefault();
     if (!newLinkedNoteId) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/notes/${noteId}/links`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/notes/${noteId}/links`, {
         method: "POST",
         headers:{"Content-Type":"application/json"},
         body: JSON.stringify({ targetId: newLinkedNoteId })

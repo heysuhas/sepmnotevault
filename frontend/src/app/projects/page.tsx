@@ -45,11 +45,11 @@ export default function ProjectsPage() {
         
         try {
           // Fetch Projects based on role visibility
-          const pRes = await fetch(`http://localhost:5000/api/projects/${activeWs.workspaceId}?userId=${parsedUser.id}&userRole=${activeWs.role}`);
+          const pRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/projects/${activeWs.workspaceId}?userId=${parsedUser.id}&userRole=${activeWs.role}`);
           if (pRes.ok) setProjects(await pRes.json());
 
           // Pre-fetch workspace members for the "Add Member" dropdown
-          const mRes = await fetch(`http://localhost:5000/api/workspaces/${activeWs.workspaceId}/members`);
+          const mRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/workspaces/${activeWs.workspaceId}/members`);
           if (mRes.ok) setWorkspaceMembers(await mRes.json());
           
         } catch (error) {
@@ -65,7 +65,7 @@ export default function ProjectsPage() {
     if (!workspace || !user) return;
     
     try {
-      const res = await fetch("http://localhost:5000/api/projects", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/projects`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -96,7 +96,7 @@ export default function ProjectsPage() {
     try {
       if (inviteEmail) {
          // Invite external by email
-         const res = await fetch(`http://localhost:5000/api/projects/${selectedProjectId}/invite-email`, {
+         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/projects/${selectedProjectId}/invite-email`, {
            method: "POST",
            headers: { "Content-Type": "application/json" },
            body: JSON.stringify({ email: inviteEmail, inviterRole: workspace.role, workspaceId: workspace.workspaceId })
@@ -109,7 +109,7 @@ export default function ProjectsPage() {
          }
       } else {
          // Add existing workspace member
-         const res = await fetch(`http://localhost:5000/api/projects/${selectedProjectId}/members`, {
+         const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/projects/${selectedProjectId}/members`, {
            method: "POST",
            headers: { "Content-Type": "application/json" },
            body: JSON.stringify({ targetUserId: selectedUserId, inviterRole: workspace.role })
@@ -129,7 +129,7 @@ export default function ProjectsPage() {
   const handleGenerateLink = async (projectId: string) => {
     if (!workspace) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/projects/${projectId}/invite-link`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/projects/${projectId}/invite-link`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

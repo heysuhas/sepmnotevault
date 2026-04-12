@@ -38,7 +38,7 @@ export default function MilestonesPage() {
         setWorkspace(ws);
         
         try {
-           const pRes = await fetch(`http://localhost:5000/api/projects/${ws.workspaceId}?userId=${parsed.id}&userRole=${ws.role}`);
+           const pRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/projects/${ws.workspaceId}?userId=${parsed.id}&userRole=${ws.role}`);
            let loadedProjects = [];
            if (pRes.ok) {
               loadedProjects = await pRes.json();
@@ -46,7 +46,7 @@ export default function MilestonesPage() {
               if (loadedProjects.length > 0) setSelectedProjectId(loadedProjects[0].id);
            }
 
-           const mRes = await fetch(`http://localhost:5000/api/milestones/workspace/${ws.workspaceId}`);
+           const mRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/milestones/workspace/${ws.workspaceId}`);
            if (mRes.ok) setMilestones(await mRes.json());
            
            // Fetch all tasks and notes to populate dropdowns
@@ -54,8 +54,8 @@ export default function MilestonesPage() {
            let allNotes: any[] = [];
            for(const p of loadedProjects) {
                const [tRes, nRes] = await Promise.all([
-                   fetch(`http://localhost:5000/api/tasks/${p.id}`),
-                   fetch(`http://localhost:5000/api/notes/project/${p.id}`)
+                   fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/tasks/${p.id}`),
+                   fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/notes/project/${p.id}`)
                ]);
                if(tRes.ok) allTasks = allTasks.concat(await tRes.json());
                if(nRes.ok) allNotes = allNotes.concat(await nRes.json());
@@ -75,7 +75,7 @@ export default function MilestonesPage() {
     e.preventDefault();
     if (!newName || !selectedProjectId) return;
     try {
-      const res = await fetch("http://localhost:5000/api/milestones", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/milestones`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -97,7 +97,7 @@ export default function MilestonesPage() {
 
   const handleComplete = async (id: string) => {
     try {
-      await fetch(`http://localhost:5000/api/milestones/${id}/status`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/milestones/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: "Completed" })
@@ -110,7 +110,7 @@ export default function MilestonesPage() {
      e.preventDefault();
      if (!linkTargetId) return;
      try {
-       const res = await fetch(`http://localhost:5000/api/milestones/${milestoneId}/items`, {
+       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/milestones/${milestoneId}/items`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ targetId: linkTargetId, targetType: linkTargetType })

@@ -55,14 +55,14 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       // 1. Fetch Real Workspace Members Count
-      const mRes = await fetch(`http://localhost:5000/api/workspaces/${activeWorkspace.workspaceId}/members`);
+      const mRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/workspaces/${activeWorkspace.workspaceId}/members`);
       if (mRes.ok) {
         const mData = await mRes.json();
         setMembersCount(mData.length);
       }
 
       // 2. Fetch Real Projects Visible to User
-      const pRes = await fetch(`http://localhost:5000/api/projects/${activeWorkspace.workspaceId}?userId=${user.id}&userRole=${activeWorkspace.role}`);
+      const pRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/projects/${activeWorkspace.workspaceId}?userId=${user.id}&userRole=${activeWorkspace.role}`);
       let loadProjects = [];
       if (pRes.ok) {
         loadProjects = await pRes.json();
@@ -71,7 +71,7 @@ export default function DashboardPage() {
 
       // 3. Fetch Tasks across all those visible projects
       if (loadProjects.length > 0) {
-        const taskPromises = loadProjects.map((p: any) => fetch(`http://localhost:5000/api/tasks/${p.id}`));
+        const taskPromises = loadProjects.map((p: any) => fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/tasks/${p.id}`));
         const responses = await Promise.all(taskPromises);
         let allTasks: any[] = [];
         for (const r of responses) {
@@ -89,7 +89,7 @@ export default function DashboardPage() {
         setTasks([]);
       }
       
-      const bmRes = await fetch(`http://localhost:5000/api/milestones/workspace/${activeWorkspace.workspaceId}`);
+      const bmRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/milestones/workspace/${activeWorkspace.workspaceId}`);
       if (bmRes.ok) setMilestones(await bmRes.json());
 
     } catch (error) {

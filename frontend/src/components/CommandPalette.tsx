@@ -38,7 +38,7 @@ export default function CommandPalette() {
         if (storedUser) {
            const parsed = JSON.parse(storedUser);
            if (parsed.workspaces?.length > 0) {
-              const res = await fetch(`http://localhost:5000/api/workspaces/${parsed.workspaces[0].workspaceId}/search?q=${encodeURIComponent(query)}`);
+              const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/workspaces/${parsed.workspaces[0].workspaceId}/search?q=${encodeURIComponent(query)}`);
               if (res.ok) setResults(await res.json());
            }
         }

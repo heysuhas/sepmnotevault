@@ -23,7 +23,7 @@ export default function ChangelogPage() {
       setUser(parsed);
       if (parsed.workspaces?.length > 0) {
          setWorkspace(parsed.workspaces[0]);
-         fetch(`http://localhost:5000/api/workspaces/${parsed.workspaces[0].workspaceId}/changelog`)
+         fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/workspaces/${parsed.workspaces[0].workspaceId}/changelog`)
            .then(res => res.json())
            .then(data => {
               setEvents(data);
@@ -39,7 +39,7 @@ export default function ChangelogPage() {
     e.preventDefault();
     if (!annotationText || !workspace) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/workspaces/${workspace.workspaceId}/changelog/annotations`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/workspaces/${workspace.workspaceId}/changelog/annotations`, {
          method: "POST",
          headers: { "Content-Type": "application/json" },
          body: JSON.stringify({

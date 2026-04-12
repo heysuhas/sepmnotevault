@@ -35,7 +35,7 @@ export default function TeamPage() {
           setWorkspace(activeWs);
           
           try {
-            const res = await fetch(`http://localhost:5000/api/workspaces/${activeWs.workspaceId}/members`);
+            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/workspaces/${activeWs.workspaceId}/members`);
             if (res.ok) {
               const data = await res.json();
               setMembers(data);
@@ -57,7 +57,7 @@ export default function TeamPage() {
     setInviteError("");
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/invite", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/auth/invite`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -77,7 +77,7 @@ export default function TeamPage() {
         setInviteError(data.error || "Failed to invite user");
       } else {
         // Refresh members list
-        const mRes = await fetch(`http://localhost:5000/api/workspaces/${workspace.workspaceId}/members`);
+        const mRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/workspaces/${workspace.workspaceId}/members`);
         setMembers(await mRes.json());
         
         setIsModalOpen(false);

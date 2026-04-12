@@ -47,7 +47,7 @@ export default function TasksPage() {
         const activeWs = parsedUser.workspaces[0];
         setWorkspace(activeWs);
         try {
-          const pRes = await fetch(`http://localhost:5000/api/projects/${activeWs.workspaceId}?userId=${parsedUser.id}&userRole=${activeWs.role}`);
+          const pRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/projects/${activeWs.workspaceId}?userId=${parsedUser.id}&userRole=${activeWs.role}`);
           if (pRes.ok) {
             const data = await pRes.json();
             setProjects(data);
@@ -55,7 +55,7 @@ export default function TasksPage() {
               setSelectedProjectId(data[0].id);
             }
           }
-          const mRes = await fetch(`http://localhost:5000/api/workspaces/${activeWs.workspaceId}/members`);
+          const mRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/workspaces/${activeWs.workspaceId}/members`);
           if (mRes.ok) setWorkspaceMembers(await mRes.json());
         } catch (error) {
           console.error("Failed to load generic projects data.");
@@ -68,7 +68,7 @@ export default function TasksPage() {
   const loadTasks = async (projectId: string) => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/tasks/${projectId}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/tasks/${projectId}`);
       if (res.ok) setTasks(await res.json());
     } catch(err) {}
     setLoading(false);
@@ -79,7 +79,7 @@ export default function TasksPage() {
     if (!selectedProjectId || !workspace) return;
     
     try {
-      const res = await fetch("http://localhost:5000/api/tasks", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -114,7 +114,7 @@ export default function TasksPage() {
     setTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
 
     try {
-      await fetch(`http://localhost:5000/api/tasks/${taskId}/status`, {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000'}/api/tasks/${taskId}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
