@@ -1,5 +1,6 @@
 const prisma = require('../utils/db');
 const jwt = require('jsonwebtoken');
+const { sendEmail } = require('../utils/mailer');
 
 // Creates a new project in the active workspace. Requires Admin or Team Lead role.
 exports.createProject = async (req, res) => {
@@ -120,10 +121,36 @@ exports.generateInviteLink = async (req, res) => {
     // The token includes exactly which project they will fall into
     const token = jwt.sign({ projectId, workspaceId }, JWT_SECRET, { expiresIn: '7d' });
     
-    // In production, match domain. But for local:
     res.status(200).json({ token, link: `http://localhost:3000/invite?token=${token}` });
   } catch (error) {
     console.error('Generate Link Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+exports.inviteByEmail = async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const { email, inviterRole, workspaceId } = req.body;
+
+    if (inviterRole !== 'Admin' && inviterRole !== 'Team Lead') {
+      return res.status(403).json({ error: 'Only Admins or Team Leads can invite via email.' });
+    }
+
+    const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
+    const token = jwt.sign({ projectId, workspaceId }, JWT_SECRET, { expiresIn: '7d' });
+    const link = `http://localhost:3000/invite?token=${token}`;
+
+    await sendEmail({
+      to: email,
+      subject: "You've been invited to collab on NoteVault",
+      text: `Hello,\n\nYou have been invited to join a specific project on NoteVault. Click the following link to join:\n${link}`,
+      html: `<h3>You're Invited!</h3><p>You have been invited to a NoteVault project.</p><br/><a href="${link}" style="padding: 10px 20px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 8px;">Accept Invitation</a><br/><br/><p>If the button doesn't work, copy and paste this link: ${link}</p>`
+    });
+
+    res.status(200).json({ message: 'Invitation email sent successfully.' });
+  } catch (error) {
+    console.error('Invite By Email Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };

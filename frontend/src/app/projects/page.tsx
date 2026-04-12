@@ -21,6 +21,7 @@ export default function ProjectsPage() {
   const [isMemberModalOpen, setIsMemberModalOpen] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedUserId, setSelectedUserId] = useState("");
+  const [inviteEmail, setInviteEmail] = useState("");
 
   // Invite Link Generation Modal
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
@@ -89,22 +90,36 @@ export default function ProjectsPage() {
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedProjectId || !selectedUserId || !workspace) return;
+    if (!selectedProjectId || (!selectedUserId && !inviteEmail) || !workspace) return;
+    setLoading(true);
 
     try {
-      const res = await fetch(`http://localhost:5000/api/projects/${selectedProjectId}/members`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          targetUserId: selectedUserId,
-          inviterRole: workspace.role
-        })
-      });
-
-      if (res.ok) {
-        setIsMemberModalOpen(false);
-        setSelectedUserId("");
-        loadData(); // Refresh to update member counts
+      if (inviteEmail) {
+         // Invite external by email
+         const res = await fetch(`http://localhost:5000/api/projects/${selectedProjectId}/invite-email`, {
+           method: "POST",
+           headers: { "Content-Type": "application/json" },
+           body: JSON.stringify({ email: inviteEmail, inviterRole: workspace.role, workspaceId: workspace.workspaceId })
+         });
+         if (res.ok) {
+           setIsMemberModalOpen(false);
+           setInviteEmail("");
+           setSelectedUserId("");
+           loadData();
+         }
+      } else {
+         // Add existing workspace member
+         const res = await fetch(`http://localhost:5000/api/projects/${selectedProjectId}/members`, {
+           method: "POST",
+           headers: { "Content-Type": "application/json" },
+           body: JSON.stringify({ targetUserId: selectedUserId, inviterRole: workspace.role })
+         });
+         if (res.ok) {
+           setIsMemberModalOpen(false);
+           setSelectedUserId("");
+           setInviteEmail("");
+           loadData(); // Refresh to update member counts
+         }
       }
     } catch (error) {
       console.error(error);
@@ -302,18 +317,34 @@ export default function ProjectsPage() {
                 <div>
                   <label className="mb-1.5 block text-sm font-medium">Select Workspace Member</label>
                   <select 
-                    required 
                     value={selectedUserId} 
-                    onChange={(e) => setSelectedUserId(e.target.value)} 
+                    onChange={(e) => { setSelectedUserId(e.target.value); setInviteEmail(""); }} 
                     className="w-full rounded-xl border border-slate-300 bg-transparent px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700"
                   >
-                    <option value="" disabled>Select a user...</option>
+                    <option value="">Select a user...</option>
                     {workspaceMembers.map(m => (
                       <option key={m.userId} value={m.userId} className="dark:bg-slate-800">
                         {m.user.name || m.user.email} ({m.role})
                       </option>
                     ))}
                   </select>
+                </div>
+                
+                <div className="flex items-center py-2">
+                   <div className="h-px w-full bg-slate-200 dark:bg-slate-700"></div>
+                   <span className="px-3 text-xs text-slate-400">OR</span>
+                   <div className="h-px w-full bg-slate-200 dark:bg-slate-700"></div>
+                </div>
+
+                <div>
+                   <label className="mb-1.5 block text-sm font-medium">Invite by Email (External)</label>
+                   <input 
+                     type="email" 
+                     value={inviteEmail} 
+                     onChange={(e) => { setInviteEmail(e.target.value); setSelectedUserId(""); }} 
+                     placeholder="colleague@domain.com" 
+                     className="w-full rounded-xl border border-slate-300 bg-transparent px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 dark:border-slate-700" 
+                   />
                 </div>
                 <div className="mt-8 flex justify-end space-x-3 pt-4">
                   <button type="button" onClick={() => setIsMemberModalOpen(false)} className="rounded-xl px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">Cancel</button>

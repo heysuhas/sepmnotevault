@@ -14,4 +14,7 @@ router.post('/:projectId/members', projectsController.addProjectMember);
 // Generate an invite link for a project
 router.post('/:projectId/invite-link', projectsController.generateInviteLink);
 
+// Dispatch invite link directly to an email
+router.post('/:projectId/invite-email', projectsController.inviteByEmail);
+
 module.exports = router;

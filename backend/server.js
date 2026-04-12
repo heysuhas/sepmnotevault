@@ -23,6 +23,7 @@ const taskRoutes = require('./routes/tasks');
 const workspaceRoutes = require('./routes/workspaces');
 const notesRoutes = require('./routes/notes');
 const milestoneRoutes = require('./routes/milestones');
+const notificationRoutes = require('./routes/notifications');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
@@ -30,6 +31,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/workspaces', workspaceRoutes);
 app.use('/api/notes', notesRoutes);
 app.use('/api/milestones', milestoneRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'NoteVault Backend' });

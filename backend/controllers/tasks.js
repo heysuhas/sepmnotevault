@@ -3,7 +3,7 @@ const prisma = require('../utils/db');
 // Team Leads can create tasks inside their assigned projects
 exports.createTask = async (req, res) => {
   try {
-    const { projectId, name, description, priority, dueDate, userRole } = req.body;
+    const { projectId, name, description, priority, dueDate, userRole, noteId } = req.body;
 
     if (!projectId || !name || !userRole) {
       return res.status(400).json({ error: 'Missing required task fields' });
@@ -19,7 +19,8 @@ exports.createTask = async (req, res) => {
         description,
         priority: priority || 'Medium',
         dueDate: dueDate ? new Date(dueDate) : null,
-        projectId
+        projectId,
+        noteId: noteId || null
       }
     });
 

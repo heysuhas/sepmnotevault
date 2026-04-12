@@ -3,19 +3,26 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
-  Search, CheckSquare, FileText, Activity, Clock, Box 
+  Search, CheckSquare, FileText, Activity, Clock, Box, Plus, MessageSquare
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 
 export default function ChangelogPage() {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+  const [workspace, setWorkspace] = useState<any>(null);
+  
+  const [annotatingId, setAnnotatingId] = useState<string | null>(null);
+  const [annotationText, setAnnotationText] = useState("");
 
-  useEffect(() => {
+  const loadData = () => {
     const storedUser = localStorage.getItem("nv_user");
     if (storedUser) {
       const parsed = JSON.parse(storedUser);
+      setUser(parsed);
       if (parsed.workspaces?.length > 0) {
+         setWorkspace(parsed.workspaces[0]);
          fetch(`http://localhost:5000/api/workspaces/${parsed.workspaces[0].workspaceId}/changelog`)
            .then(res => res.json())
            .then(data => {
@@ -24,13 +31,39 @@ export default function ChangelogPage() {
            });
       }
     }
-  }, []);
+  };
+
+  useEffect(() => { loadData(); }, []);
+
+  const handleAddAnnotation = async (e: React.FormEvent, targetId: string) => {
+    e.preventDefault();
+    if (!annotationText || !workspace) return;
+    try {
+      const res = await fetch(`http://localhost:5000/api/workspaces/${workspace.workspaceId}/changelog/annotations`, {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+         body: JSON.stringify({
+            targetId,
+            text: annotationText,
+            authorId: user.id,
+            authorName: user.name
+         })
+      });
+      if (res.ok) {
+         setAnnotatingId(null);
+         setAnnotationText("");
+         loadData();
+      }
+    } catch(err) {}
+  };
 
   const getEventIcon = (type: string) => {
     if (type === "Document") return <FileText className="h-5 w-5 text-indigo-500" />;
     if (type === "Task") return <CheckSquare className="h-5 w-5 text-emerald-500" />;
     return <Activity className="h-5 w-5 text-blue-500" />;
   };
+
+  const isApprover = workspace?.role === "Admin" || workspace?.role === "Team Lead";
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 font-sans text-slate-900 transition-colors duration-300 dark:bg-slate-900 dark:text-slate-100 md:flex-row">
@@ -83,7 +116,7 @@ export default function ChangelogPage() {
 
                     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-800/40 hover:shadow-md transition-shadow">
                        <div className="flex flex-col md:flex-row md:items-start justify-between">
-                          <div>
+                          <div className="flex-1 pr-6">
                              <div className="flex items-center space-x-2 mb-2">
                                 <div className="flex h-5 w-5 items-center justify-center rounded-full bg-indigo-100 text-[10px] font-bold text-indigo-700 dark:bg-indigo-900 dark:text-indigo-400">
                                    {evt.authorImage}
@@ -94,7 +127,7 @@ export default function ChangelogPage() {
                              </div>
                              
                              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{evt.title}</h3>
-                             <div className="mt-3 flex items-center space-x-3">
+                             <div className="mt-3 flex items-center space-x-3 mb-4">
                                <span className="flex items-center space-x-1 rounded-md bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-600 dark:bg-slate-700 dark:text-slate-300">
                                   <Box className="h-3 w-3 mr-1" />
                                   {evt.project}
@@ -103,9 +136,36 @@ export default function ChangelogPage() {
                                   {evt.type}
                                </span>
                              </div>
+
+                             {/* Annotations */}
+                             {evt.annotations && evt.annotations.length > 0 && (
+                               <div className="mt-4 space-y-3 pl-4 border-l-2 border-indigo-200 dark:border-indigo-800">
+                                  {evt.annotations.map((a: any) => (
+                                     <div key={a.id} className="bg-indigo-50/50 dark:bg-indigo-900/10 p-3 rounded-xl border border-indigo-50 dark:border-indigo-900/40">
+                                        <p className="text-xs font-bold text-indigo-700 dark:text-indigo-400 mb-1">{a.authorName} <span className="font-normal text-slate-500 ml-1">annotated</span></p>
+                                        <p className="text-sm text-slate-700 dark:text-slate-300">{a.text}</p>
+                                     </div>
+                                  ))}
+                               </div>
+                             )}
+
+                             {/* Add Annotation Form */}
+                             {annotatingId === evt.id ? (
+                               <form onSubmit={(e) => handleAddAnnotation(e, evt.id)} className="mt-4 flex space-x-2">
+                                  <input autoFocus type="text" value={annotationText} onChange={e=>setAnnotationText(e.target.value)} placeholder="Add specific release details, context, etc..." className="flex-1 rounded-lg border border-slate-300 bg-transparent px-3 py-2 text-sm outline-none focus:border-indigo-500 dark:border-slate-700" />
+                                  <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-indigo-700">Save</button>
+                                  <button type="button" onClick={() => setAnnotatingId(null)} className="text-slate-500 text-sm px-2">Cancel</button>
+                               </form>
+                             ) : isApprover && (
+                               <button onClick={() => setAnnotatingId(evt.id)} className="mt-4 flex items-center space-x-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 opacity-60 hover:opacity-100 transition">
+                                  <MessageSquare className="h-3.5 w-3.5" />
+                                  <span>Annotate Change</span>
+                               </button>
+                             )}
+
                           </div>
                           
-                          <div className="mt-4 md:mt-0 text-xs font-semibold text-slate-400 flex items-center space-x-1.5">
+                          <div className="mt-4 md:mt-0 text-xs font-semibold text-slate-400 flex items-center space-x-1.5 shrink-0">
                              <Clock className="h-3.5 w-3.5" />
                              <span>{evt.date}</span>
                           </div>

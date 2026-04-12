@@ -48,7 +48,9 @@ exports.getWorkspaceMilestones = async (req, res) => {
     const milestones = await prisma.milestone.findMany({
       where: { project: { workspaceId } },
       include: {
-        project: { select: { name: true } }
+        project: { select: { name: true } },
+        tasks: true,
+        notes: true
       },
       orderBy: { dueDate: 'asc' }
     });
@@ -76,3 +78,30 @@ exports.updateMilestoneStatus = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
+
+exports.getMilestoneItems = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tasks = await prisma.task.findMany({ where: { milestoneId: id } });
+    const notes = await prisma.note.findMany({ where: { milestoneId: id } });
+    res.json({ tasks, notes });
+  } catch(e) {
+    res.status(500).json({error: "Server Error"});
+  }
+};
+
+exports.linkItem = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { targetId, targetType } = req.body;
+    if (targetType === 'task') {
+       await prisma.task.update({ where: { id: targetId }, data: { milestoneId: id } });
+    } else {
+       await prisma.note.update({ where: { id: targetId }, data: { milestoneId: id } });
+    }
+    res.json({ success: true });
+  } catch(e) {
+    res.status(500).json({error: "Server Error"});
+  }
+};
+

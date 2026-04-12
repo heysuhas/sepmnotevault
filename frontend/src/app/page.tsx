@@ -85,10 +85,7 @@ export default function AuthPage() {
         throw new Error(data.error || "Unable to process password reset");
       }
 
-      setForgotMessage(data.message || "Temporary password generated.");
-      if (data.tempPassword) {
-        setTempPassword(data.tempPassword);
-      }
+      setForgotMessage(data.message || "An email has been sent to you.");
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -239,12 +236,6 @@ export default function AuthPage() {
             {forgotMessage && (
               <div className="rounded-lg bg-emerald-50 p-3 text-sm text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">
                 <p>{forgotMessage}</p>
-                {tempPassword && (
-                  <p className="mt-1 text-xs">
-                    Temporary password:{" "}
-                    <span className="font-mono font-semibold">{tempPassword}</span>
-                  </p>
-                )}
               </div>
             )}
 

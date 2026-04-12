@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Search, Bell, Plus, FolderKanban, 
   CheckSquare, Settings, History, Users,
-  MoreHorizontal, Laptop, Loader2
+  MoreHorizontal, Laptop, Loader2, Flag
 } from "lucide-react";
 import Sidebar from "@/components/Sidebar";
 
@@ -19,6 +19,7 @@ export default function DashboardPage() {
   // Real Data Streams
   const [projects, setProjects] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
+  const [milestones, setMilestones] = useState<any[]>([]);
   const [membersCount, setMembersCount] = useState<number>(1);
   const [loading, setLoading] = useState(true);
 
@@ -80,13 +81,17 @@ export default function DashboardPage() {
         // Embellish tasks with project name
         allTasks = allTasks.map(t => ({
           ...t,
-          projectName: loadProjects.find(p => p.id === t.projectId)?.name || "Unknown"
+          projectName: loadProjects.find((p: any) => p.id === t.projectId)?.name || "Unknown"
         }));
         
         setTasks(allTasks);
       } else {
         setTasks([]);
       }
+      
+      const bmRes = await fetch(`http://localhost:5000/api/milestones/workspace/${activeWorkspace.workspaceId}`);
+      if (bmRes.ok) setMilestones(await bmRes.json());
+
     } catch (error) {
       console.error("Dashboard Load Error");
     }
@@ -113,6 +118,18 @@ export default function DashboardPage() {
   const completedTasks = tasks.filter(t => t.status === "Done").length;
   const overdueTasks = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== "Done").length;
   const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const nextWeek = new Date(today);
+  nextWeek.setDate(nextWeek.getDate() + 7);
+
+  const allEvents = [
+    ...tasks.filter(t => t.dueDate && t.status !== "Done").map(t => ({ id: `t_${t.id}`, title: t.name, date: new Date(t.dueDate), type: "task" })),
+    ...milestones.filter(m => m.dueDate && m.status !== "Completed").map(m => ({ id: `m_${m.id}`, title: m.name, date: new Date(m.dueDate), type: "milestone" }))
+  ].sort((a,b) => a.date.getTime() - b.date.getTime());
+  
+  const upcomingEvents = allEvents.filter(e => e.date >= today && e.date <= nextWeek);
 
   if (!user || !activeWorkspace) {
     return (
@@ -349,9 +366,24 @@ export default function DashboardPage() {
                     </div>
                  </div>
                  <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-800/50">
-                    <h2 className="mb-6 text-lg font-bold">Deadlines</h2>
-                    {overdueTasks > 0 ? (
-                      <div className="py-4 text-sm text-red-500 font-medium">You have {overdueTasks} urgent tasks! View them in Tasks tab.</div>
+                    <h2 className="mb-6 text-lg font-bold flex items-center justify-between">
+                       <span>Upcoming Deadlines</span>
+                       <span className="text-xs font-medium text-slate-400">Next 7 days</span>
+                    </h2>
+                    {upcomingEvents.length > 0 ? (
+                       <div className="space-y-4">
+                          {upcomingEvents.map(e => (
+                             <div key={e.id} className={`flex items-start space-x-3 p-3 rounded-xl border ${e.type==='task' ? 'border-emerald-100 bg-emerald-50 dark:bg-emerald-900/10 dark:border-emerald-900/30' : 'border-orange-100 bg-orange-50 dark:bg-orange-900/10 dark:border-orange-900/30'}`}>
+                               <div className={`mt-0.5 ${e.type === 'task' ? 'text-emerald-500' : 'text-orange-500'}`}>
+                                  {e.type === 'task' ? <CheckSquare className="h-4 w-4" /> : <Flag className="h-4 w-4" />}
+                               </div>
+                               <div>
+                                  <p className={`text-sm font-semibold ${e.type === 'task' ? 'text-emerald-900 dark:text-emerald-100' : 'text-orange-900 dark:text-orange-100'}`}>{e.title}</p>
+                                  <p className={`text-xs ${e.type === 'task' ? 'text-emerald-600 dark:text-emerald-400' : 'text-orange-600 dark:text-orange-400'}`}>{e.date.toLocaleDateString()}</p>
+                               </div>
+                             </div>
+                          ))}
+                       </div>
                     ) : (
                       <div className="py-8 text-center text-sm text-slate-500">
                         No immediate deadlines crossing this week.

@@ -11,7 +11,13 @@ router.get('/project/:projectId', notesController.getProjectNotes);
 // Get a single note by ID
 router.get('/:id', notesController.getNoteById);
 
+// Update note metadata/content
+router.patch('/:id', notesController.updateNote);
+
 // Update note status (Approval Workflow)
 router.patch('/:id/status', notesController.updateNoteStatus);
+
+// Link two notes
+router.post('/:id/links', notesController.linkNote);
 
 module.exports = router;

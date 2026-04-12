@@ -2,6 +2,7 @@ const prisma = require('../utils/db');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const { sendEmail } = require('../utils/mailer');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecret';
 
@@ -104,6 +105,13 @@ exports.inviteUser = async (req, res) => {
       }
     });
 
+    await sendEmail({
+      to: newEmail,
+      subject: "You've been invited to a NoteVault Workspace!",
+      text: `Hello ${newName || ''},\n\nYou have been invited to join a NoteVault Workspace. Your temporary login password is: ${newPassword}\n\nPlease log in and change your password as soon as possible.`,
+      html: `<h3>Welcome to NoteVault!</h3><p>You have been invited to join a workspace.</p><p>Your temporary login password is: <strong>${newPassword}</strong></p><p>Please log in and update your password immediately.</p>`
+    });
+
     res.status(201).json({ message: 'User created and invited successfully', invitedUserId: newUser.id });
   } catch (error) {
     console.error('Invite Admin Error:', error);
@@ -184,10 +192,15 @@ exports.forgotPassword = async (req, res) => {
       data: { password: hashedPassword }
     });
 
-    // In a real app we would email this temp password; for now we return it for dev/testing
+    await sendEmail({
+      to: email,
+      subject: "NoteVault Password Reset",
+      text: `Hello,\n\nYour temporary password is: ${tempPassword}\n\nPlease log in and change your password immediately.`,
+      html: `<h3>NoteVault Password Reset</h3><p>Your temporary password is: <strong>${tempPassword}</strong></p><p>Please log in and change your password immediately.</p>`
+    });
+
     return res.json({
-      message: 'Temporary password generated successfully. Use it to log in and then change your password.',
-      tempPassword
+      message: 'A temporary password has been sent to your email. Please login and secure your account.',
     });
   } catch (error) {
     console.error('Forgot Password Error:', error);
@@ -253,6 +266,33 @@ exports.registerWithInvite = async (req, res) => {
     });
   } catch (error) {
     console.error('Invite Register Error:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+exports.changePassword = async (req, res) => {
+  try {
+    const { userId, currentPassword, newPassword } = req.body;
+    
+    if (!userId || !currentPassword || !newPassword) {
+      return res.status(400).json({ error: 'All fields required' });
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) return res.status(400).json({ error: 'Incorrect current password' });
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword }
+    });
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Change Pass Error:', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };

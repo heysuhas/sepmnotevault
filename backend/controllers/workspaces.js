@@ -44,6 +44,14 @@ exports.getKnowledgeGraph = async (req, res) => {
        links.push({ source: `proj_${n.projectId}`, target: `note_${n.id}` });
      });
 
+     const noteIds = notes.map(n => n.id);
+     const noteLinks = await prisma.noteLink.findMany({
+       where: { sourceId: { in: noteIds } }
+     });
+     noteLinks.forEach(nl => {
+       links.push({ source: `note_${nl.sourceId}`, target: `note_${nl.targetId}` });
+     });
+
      tasks.forEach((t) => {
        nodes.push({ id: `task_${t.id}`, group: 'task', label: t.name, x: 400 + (Math.random()*400-200), y: 300 + (Math.random()*400-200), color: '#F59E0B' });
        links.push({ source: `proj_${t.projectId}`, target: `task_${t.id}` });
@@ -104,11 +112,80 @@ exports.getChangelog = async (req, res) => {
         });
      });
 
+     const allAnnotations = await prisma.changelogAnnotation.findMany({
+        where: { workspaceId }
+     });
+
      // Sort by most recent
      events.sort((a, b) => b.timestamp - a.timestamp);
 
-     res.json(events.slice(0, 30));
+     const finalEvents = events.slice(0, 30).map(e => ({
+        ...e,
+        annotations: allAnnotations.filter(a => a.targetId === e.id)
+     }));
+
+     res.json(finalEvents);
   } catch(e) {
      res.status(500).json({error: "Server Error"});
   }
 };
+
+exports.updateWorkspace = async (req, res) => {
+  try {
+    const { workspaceId } = req.params;
+    const { name, url } = req.body;
+    
+    // Simplification for the dummy settings page behavior.
+    const updated = await prisma.workspace.update({
+      where: { id: workspaceId },
+      data: { name: name }
+    });
+    
+    res.json(updated);
+  } catch(e) {
+    console.error(e);
+    res.status(500).json({error: "Server Error"});
+  }
+};
+
+exports.addChangelogAnnotation = async (req, res) => {
+  try {
+    const { workspaceId } = req.params;
+    const { targetId, text, authorId, authorName } = req.body;
+    const annotation = await prisma.changelogAnnotation.create({
+      data: { targetId, workspaceId, text, authorId, authorName }
+    });
+    res.json(annotation);
+  } catch(e) {
+    console.error(e);
+    res.status(500).json({error: "Server Error"});
+  }
+};
+
+
+exports.globalSearch = async (req, res) => {
+  try {
+    const { workspaceId } = req.params;
+    const { q } = req.query;
+    if (!q) return res.json({ notes: [], tasks: [], milestones: [] });
+
+    const notes = await prisma.note.findMany({
+      where: { project: { workspaceId }, OR: [{ title: { contains: q }}, { content: { contains: q }}] },
+      take: 10
+    });
+    const tasks = await prisma.task.findMany({
+      where: { project: { workspaceId }, OR: [{ name: { contains: q }}, { description: { contains: q }}] },
+      take: 10
+    });
+    const milestones = await prisma.milestone.findMany({
+      where: { project: { workspaceId }, OR: [{ name: { contains: q }}, { description: { contains: q }}] },
+      take: 10
+    });
+
+    res.json({ notes, tasks, milestones });
+  } catch(e) {
+    console.error(e);
+    res.status(500).json({ error: "Server Error" });
+  }
+};
+
